@@ -1,25 +1,55 @@
-import logo from './logo.svg';
-import './App.css';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { SECRET_KEY } from "./constants";
 
-function App() {
+export default function App() {
+  const [seletedFile, setSelectedFile] = useState(null);
+  const convertJPEGtoWEBP = async (event) => {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append("seletedFile", seletedFile);
+    console.log(formData);
+    try {
+      const url = `https://v2.convertapi.com/convert/jpeg/to/webp?Secret=${SECRET_KEY}&StoreFile=true`;
+      const res = await axios.post(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: {
+          Parameters: [
+            {
+              Name: "File",
+              FileValue: {
+                Name: seletedFile.name,
+                Data: "<Base64 encoded file content>",
+              },
+            },
+            {
+              Name: "StoreFile",
+              Value: true,
+            },
+          ],
+        },
+      });
+      console.log("Response: " + res);
+      console.log(res.data);
+    } catch (error) {
+      console.log("Catching error: " + error);
+    }
+  };
+  const handleFileSelect = (e) => {
+    console.log(e.target.files[0].name);
+    setSelectedFile(e.target.files[0]);
+  };
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <form method="POST" onSubmit={convertJPEGtoWEBP}>
+        <label htmlFor="">Upload some file</label>
+        <br />
+        <input type="file" name="" id="" onChange={handleFileSelect} />
+        <br />
+        <button type="submit">Submit</button>
+      </form>
+    </>
   );
 }
-
-export default App;
