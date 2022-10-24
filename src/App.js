@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { SECRET_KEY } from "./constants";
+import { Base64 } from "./base64";
 
 export default function App() {
   const [seletedFile, setSelectedFile] = useState(null);
@@ -15,23 +16,24 @@ export default function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        data: {
-          Parameters: [
-            {
-              Name: "File",
-              FileValue: {
-                Name: seletedFile.name,
-                Data: "<Base64 encoded file content>",
-              },
+        // data: {},
+        Parameters: [
+          {
+            Name: "File",
+            FileValue: {
+              // Name: seletedFile.name,
+              // Data: "<Base64 encoded file content>",
+              Name: "test.jpg",
+              Data: Base64,
             },
-            {
-              Name: "StoreFile",
-              Value: true,
-            },
-          ],
-        },
+          },
+          {
+            Name: "StoreFile",
+            Value: true,
+          },
+        ],
       });
-      console.log("Response: " + res);
+      console.log(res);
       console.log(res.data);
     } catch (error) {
       console.log("Catching error: " + error);
@@ -43,6 +45,7 @@ export default function App() {
   };
   return (
     <>
+      {/* <img src={Base64} alt="" /> */}
       <form method="POST" onSubmit={convertJPEGtoWEBP}>
         <label htmlFor="">Upload some file</label>
         <br />
