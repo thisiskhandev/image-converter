@@ -1,10 +1,18 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { SECRET_KEY } from "./constants";
 import { Base64 } from "./base64";
+import FileBase from "react-file-base64";
 
 export default function App() {
   const [seletedFile, setSelectedFile] = useState(null);
+  const [singleFile, setSingleFile] = useState([]);
+  console.log(singleFile);
+  if (singleFile.selectedFile !== undefined) {
+    let base64Pure = singleFile.selectedFile.slice(21);
+    console.log(base64Pure);
+  }
+
   const convertJPEGtoWEBP = async (event) => {
     event.preventDefault();
     const formData = new FormData();
@@ -45,13 +53,23 @@ export default function App() {
   };
   return (
     <>
-      {/* <img src={Base64} alt="" /> */}
+      <img src={`data:image/jpeg;base64,${Base64}`} alt="" />
       <form method="POST" onSubmit={convertJPEGtoWEBP}>
         <label htmlFor="">Upload some file</label>
         <br />
         <input type="file" name="" id="" onChange={handleFileSelect} />
         <br />
         <button type="submit">Submit</button>
+      </form>
+
+      <h1>Form 2</h1>
+      <form onSubmit={(e) => e.preventDefault()}>
+        <FileBase
+          type="file"
+          multiple={false}
+          onDone={({ base64 }) => setSingleFile({ selectedFile: base64 })}
+          onChange={(e) => e.target.files[0]}
+        />
       </form>
     </>
   );
