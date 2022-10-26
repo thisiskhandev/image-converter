@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { SECRET_KEY } from "./constants";
+// import { SECRET_KEY } from "./constants";
 import { Base64 } from "./base64";
 import FileBase from "react-file-base64";
 
@@ -25,7 +25,7 @@ export default function App() {
     formData.append("seletedFile", seletedFile);
     console.log(formData);
     try {
-      const url = `https://v2.convertapi.com/convert/jpeg/to/webp?Secret=${SECRET_KEY}&StoreFile=true`;
+      const url = `https://v2.convertapi.com/convert/jpeg/to/webp?Secret=${process.env.REACT_APP_API_KEY}&StoreFile=true`;
       const res = await axios.post(url, {
         headers: {
           "Content-Type": "application/json",
@@ -59,7 +59,7 @@ export default function App() {
   };
   return (
     <>
-      {/* <img src={`data:image/jpeg;base64,${Base64}`} alt="" /> */}
+      <img src={`data:image/jpeg;base64,${Base64}`} alt="" />
       <form method="POST" onSubmit={convertJPEGtoWEBP}>
         <label htmlFor="">Upload some file</label>
         <br />
@@ -69,6 +69,7 @@ export default function App() {
       </form>
 
       <h1>Form 2 BASE64</h1>
+      {/* <h2>SECRET KEY = {process.env.REACT_APP_API_KEY}</h2> */}
       <form onSubmit={(e) => e.preventDefault()}>
         <FileBase
           type="file"
