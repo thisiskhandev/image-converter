@@ -1,8 +1,10 @@
+import { AlertBadFileType, AlertUnavailable } from "./components/AlertDialogs";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-// import { SECRET_KEY } from "./constants";
-import { Base64 } from "./base64";
+// import { Base64 } from "./base64";
 import FileBase from "react-file-base64";
+import SweetAlert2 from "react-sweetalert2";
+
 import {
   ChakraProvider,
   AlertDialog,
@@ -37,7 +39,9 @@ import {
   Td,
   TableCaption,
   TableContainer,
+  SkeletonText,
 } from "@chakra-ui/react";
+import { FaCloudUploadAlt } from "react-icons/fa";
 import "./App.css";
 export default function App() {
   // Name of image
@@ -49,28 +53,36 @@ export default function App() {
   // Button Loading
   const [btnLoading, setBtnLoading] = useState(false);
   // Loading
-  const [isLoading, setLoading] = useState(false);
+  // const [isLoading, setLoading] = useState(false);
+  // Btn Disable Loading
+  const [btnDisableLoading, setbtnDisableLoading] = useState(true);
+  // Show Downlod Button
+  const [showDownload, setShowDownload] = useState(false);
+  // WebP Converted file name and download button
+  const [convertedWebpData, setConvertedWebpData] = useState({
+    fileName: "",
+    downloadLink: "",
+  });
+  // Alert State
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     if (singleFile.selectedFile !== undefined) {
+      // PNG
       let base64Pure = singleFile.selectedFile.slice(22);
-      // jpg
+      // JPG
       // let base64Pure = singleFile.selectedFile.slice(23);
       setSinglFileBase64(base64Pure);
       // console.log(singleFileBase64);
     }
-
     let file = document.querySelectorAll('input[type="file"]')[0];
     // file.setAttribute("accept", "image/png, image/gif, image/jpeg");
     file.setAttribute("accept", "image/png");
     file.setAttribute("id", "imageShot");
     file.onchange = function (e) {
       setSelectedFileName(e.target.value.slice(12));
+      setbtnDisableLoading(false);
     };
-    // let triggerImageShot = document.getElementById("triggerImageShot");
-    // triggerImageShot.addEventListener("click", () => {
-    //   // file.addEventListener("click", (e) => console.log(e));
-    // });
   }, [singleFile, singleFileBase64]);
 
   useEffect(() => {
@@ -82,11 +94,8 @@ export default function App() {
 
   const convertJPEGtoWEBP = async (event) => {
     event.preventDefault();
-    // const formData = new FormData();
-    // formData.append("seletedFile", seletedFile);
-    // console.log(formData);
     try {
-      setLoading(true);
+      // setLoading(true);
       const url = `https://v2.convertapi.com/convert/png/to/webp?Secret=${process.env.REACT_APP_API_KEY}&StoreFile=true`;
       const res = await axios.post(url, {
         headers: {
@@ -107,20 +116,41 @@ export default function App() {
         ],
       });
       setBtnLoading(false);
-      setLoading(false);
-      console.log(res);
-      console.log(res.data);
+      if (res.status === 200) {
+        setbtnDisableLoading(true);
+        setShowDownload(true);
+      }
+      if (res.status === 200 && res.data !== null) {
+        // fileName: res.data.Files[0].FileName,
+        // downloadLink: res.data.Files[0].Url,
+        res.data.Files.forEach((val) => {
+          setConvertedWebpData({
+            fileName: val.FileName,
+            downloadLink: val.Url,
+          });
+        });
+      }
     } catch (error) {
-      console.log("Catching error: " + error);
+      console.log(error);
+      if (error.response.status === 500 || error.response.status === 503) {
+        setSwalProps(AlertBadFileType);
+      }
     }
   };
-  const handleFileSelect = (e) => {
-    console.log(e.target.files[0].name);
-    setSelectedFileName(e.target.files[0]);
-  };
+  // const handleFileSelect = (e) => {
+  //   console.log(e.target.files[0].name);
+  //   setSelectedFileName(e.target.files[0]);
+  // };
+  const [swalProps, setSwalProps] = useState({});
   return (
     <>
       <ChakraProvider>
+        <SweetAlert2
+          {...swalProps}
+          didClose={() => {
+            window.location.reload();
+          }}
+        />
         <Container maxW={"1140px"}>
           <Flex
             bg={"gray.100"}
@@ -158,11 +188,12 @@ export default function App() {
                   textAlign={"center"}
                   justifyContent={"center"}
                   direction="column"
+                  h={250}
                 >
-                  <Image
-                    src={require("./assets/images/dummy-image.png")}
-                    w={300}
-                    m="auto"
+                  <FaCloudUploadAlt
+                    fontSize={150}
+                    fill="#A0AEC0"
+                    style={{ margin: "auto" }}
                   />
                   <Heading
                     mt={3}
@@ -171,7 +202,7 @@ export default function App() {
                     fontWeight="300"
                     fontSize="md"
                   >
-                    Click to select
+                    Upload files here...
                   </Heading>
                 </Flex>
               )}
@@ -191,23 +222,29 @@ export default function App() {
                     onDone={({ base64 }) =>
                       setSingleFile({ ...singleFile, selectedFile: base64 })
                     }
-                    onChange={handleFileSelect}
                   />
                   <Button
                     isLoading={btnLoading}
+                    loadingText={"Converting..."}
+                    disabled={btnDisableLoading}
                     w={300}
                     type="submit"
                     bg={"green.400"}
                     color="white"
                     _hover={{ bg: "green.300" }}
+                    onClick={() => setBtnLoading(true)}
                   >
                     Submit
                   </Button>
                 </Flex>
               </FormControl>
             </form>
+            <DownloadTable
+              showDownload={showDownload}
+              title={convertedWebpData.fileName}
+              link={convertedWebpData.downloadLink}
+            />
           </Flex>
-          <DownloadTable isLoading={isLoading} title={seletedFileName} />
         </Container>
       </ChakraProvider>
     </>
@@ -215,15 +252,27 @@ export default function App() {
 }
 
 const DownloadTable = (props) => {
-  let isLoading = props.isLoading;
-  return isLoading ? (
-    <TableContainer>
-      <Table variant="simple">
+  let showDownload = props.showDownload;
+  return showDownload ? (
+    <TableContainer minWidth={"80%"}>
+      <Table variant={"striped"}>
+        <Thead bg="blackAlpha.800" color="white" fontWeight={600}>
+          <Tr>
+            <Td>Number of files</Td>
+            <Td>File Name</Td>
+            <Td></Td>
+          </Tr>
+        </Thead>
         <Tbody>
           <Tr>
-            <Td>{props.seletedFileName}</Td>
-            <Td>
-              <Button>Download Now</Button>
+            <Td>1</Td>
+            <Td>{props.title}</Td>
+            <Td textAlign="end">
+              <a href={props.link}>
+                <Button bg="blackAlpha.400" _hover={{ bg: "gray.300" }}>
+                  Download Now
+                </Button>
+              </a>
             </Td>
           </Tr>
         </Tbody>
